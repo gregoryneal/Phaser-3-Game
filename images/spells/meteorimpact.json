@@ -1,0 +1,113 @@
+{ "frames": [
+   {
+    "filename": "0",
+    "frame": { "x": 1, "y": 1010, "w": 285, "h": 370 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 57, "y": 142, "w": 285, "h": 370 },
+    "sourceSize": { "w": 600, "h": 580 },
+    "duration": 100
+   },
+   {
+    "filename": "1",
+    "frame": { "x": 287, "y": 1010, "w": 238, "h": 389 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 57, "y": 133, "w": 238, "h": 389 },
+    "sourceSize": { "w": 600, "h": 580 },
+    "duration": 100
+   },
+   {
+    "filename": "2",
+    "frame": { "x": 535, "y": 1, "w": 542, "h": 541 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 28, "y": 28, "w": 542, "h": 541 },
+    "sourceSize": { "w": 600, "h": 580 },
+    "duration": 100
+   },
+   {
+    "filename": "3",
+    "frame": { "x": 1078, "y": 1, "w": 571, "h": 513 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 28, "y": 57, "w": 571, "h": 513 },
+    "sourceSize": { "w": 600, "h": 580 },
+    "duration": 100
+   },
+   {
+    "filename": "4",
+    "frame": { "x": 1, "y": 572, "w": 380, "h": 437 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 66, "y": 95, "w": 380, "h": 437 },
+    "sourceSize": { "w": 600, "h": 580 },
+    "duration": 100
+   },
+   {
+    "filename": "5",
+    "frame": { "x": 535, "y": 543, "w": 438, "h": 484 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 66, "y": 57, "w": 438, "h": 484 },
+    "sourceSize": { "w": 600, "h": 580 },
+    "duration": 100
+   },
+   {
+    "filename": "6",
+    "frame": { "x": 1078, "y": 515, "w": 495, "h": 560 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 9, "y": 0, "w": 495, "h": 560 },
+    "sourceSize": { "w": 600, "h": 580 },
+    "duration": 100
+   },
+   {
+    "filename": "7",
+    "frame": { "x": 1, "y": 1, "w": 533, "h": 570 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 9, "w": 533, "h": 570 },
+    "sourceSize": { "w": 600, "h": 580 },
+    "duration": 100
+   },
+   {
+    "filename": "8",
+    "frame": { "x": 822, "y": 1076, "w": 276, "h": 285 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 66, "y": 237, "w": 276, "h": 285 },
+    "sourceSize": { "w": 600, "h": 580 },
+    "duration": 100
+   },
+   {
+    "filename": "9",
+    "frame": { "x": 526, "y": 1028, "w": 295, "h": 294 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 76, "y": 228, "w": 295, "h": 294 },
+    "sourceSize": { "w": 600, "h": 580 },
+    "duration": 100
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.2-x64",
+  "image": "meteorimpact.png",
+  "format": "RGBA8888",
+  "size": { "w": 1650, "h": 1400 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "meteorimpact-fire-1", "from": 0, "to": 1, "direction": "forward", "color": "#000000ff" },
+   { "name": "meteorimpact-fire-2", "from": 2, "to": 3, "direction": "forward", "color": "#000000ff" },
+   { "name": "meteorimpact-fire-3", "from": 4, "to": 5, "direction": "forward", "color": "#000000ff" },
+   { "name": "meteorimpact-fire-4", "from": 6, "to": 7, "direction": "forward", "color": "#000000ff" },
+   { "name": "meteorimpact-fire-5", "from": 8, "to": 9, "direction": "forward", "color": "#000000ff" }
+  ],
+  "layers": [
+   { "name": "Flattened", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

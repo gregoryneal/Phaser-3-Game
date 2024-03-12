@@ -1,0 +1,108 @@
+{
+    "level1": {
+        "backgrounds" : [
+            {
+                "key": "starsnear",
+                "scrollSpeed": 0.005,
+                "tileScale": 0.8,
+                "alpha": 1
+            },
+            {
+                "key": "starsfar",
+                "scrollSpeed": 0.004,
+                "tileScale": 0.4,
+                "alpha": 1
+            }
+        ],
+        "backgroundEffects": { "addBlur": [1, 0.4, 0.4, 1 ] },
+        "scenery": [
+            {
+                "key": "bgsun",
+                "size": { "x": 512, "y": 512 },
+                "position": { "x": 25000, "y": 25000 },
+                "scale": 1
+            }
+        ],
+        "randomScenery": [
+            {
+                "key": "space rock 1",
+                "size": { "X": 16, "y": 16 },
+                "scale": 1,
+                "randomScaleVariance": 0,
+                "number": 50,
+                "density": 100
+            }
+        ],
+        "playerSpawnTime": 1000,
+        "enemies": ["pizzas", "tacos"],
+        "initialDelay": 2000,
+        "customEnemyPools": [
+            {
+                "name": "testEnemy1",
+                "speed": 100,
+                "health": 10,
+                "damage": 1,
+                "xp": 1,                
+                "onOverlap": true,
+                "circleRadius": 28,
+                "bounce": 1,
+                "displaySize": {
+                    "x": 16,
+                    "y": 16
+                },
+                "offset": { 
+                    "x": 6,
+                    "y": 3
+                },
+                "attacks": [{
+                    "name": "testAttack1",
+                    "projectile": false,
+                    "aura": true
+                }],
+                "group": {
+                    "texture": "pizza",
+                    "maxSize": 300
+                },
+                "pool": {
+                    "name": "testPool1",
+                    "collideWithSelf": false,
+                    "collideWithOthers": false,
+                    "spawnTimer": 1000,
+                    "staggerDelay": 0,
+                    "staggerVariance": 0,
+                    "waveConfig": {
+                        "enemiesPerWave": 10,
+                        "shape": "line",
+                        "startOffset": { "x": 0, "y": 300 },
+                        "targetOffset": { "x": 0, "y": -400 },
+                        "targetPlayer": false
+                    }
+                },
+                "onDie": {
+                    "onOverlap": false,
+                    "onCollide": false
+                },
+                "onReset": {
+                    "onOverlap": true,
+                    "onCollide": false
+                },
+                "onHit": {
+                    "tint": "0xff0000",
+                    "timeout": 100,
+                    "takeDamage": true
+                }
+            }
+        ],
+        "bosses": [
+            {
+                "name": "boss1",
+                "spawnTime": 300000
+            }, 
+            {
+                "name": "boss2",
+                "spawnTime": 400000
+            }
+        ],
+        "customBosses": []
+    }
+}
