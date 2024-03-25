@@ -22,7 +22,10 @@ export class SaveManager extends Phaser.Plugins.BasePlugin {
             stardust: 0, //more valuable currency, used for persistent upgrades and class unlocks, and in game upgrades
             scrap: 0, //shit currency, used for in game upgrades
             isBossModeUnlocked: false, //self explanatory
-        };        
+        };
+    }
+
+    start() {        
         this.cachedSave = this.tryGetGameSave();
         this.events.emit('cachedSaveChanged', this.cachedSave);
     }

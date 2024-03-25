@@ -38,7 +38,7 @@ $(window).on('load', function (event) {
                 gravity: {
                     y: 0,
                 },
-                debug: false,
+                debug: true,
             }, 
             matter: {
                 gravity: {
@@ -53,7 +53,7 @@ $(window).on('load', function (event) {
         },
         plugins: {
             global: [
-                { key: 'SaveManager', plugin: SaveManager, start: false, mapping: 'saveManager' },
+                { key: 'SaveManager', plugin: SaveManager, start: true, mapping: 'saveManager' },
                 { key: 'PersistentUpgradeManager', plugin: PersistentUpgradeManager, start: true, mapping: 'persistentUpgradeManager' },
                 { key: 'LevelManager', plugin: LevelManager, start: true, mapping: 'levelManager' },
             ],
@@ -61,7 +61,7 @@ $(window).on('load', function (event) {
                 { key: 'EnemyManager', plugin: EnemyManager, start: false, mapping: 'enemyManager' },
                 { key: 'PlayerManager', plugin: Player, start: false, mapping: 'player' },
                 { key: 'SpawnManager', plugin: SpawnManager, start: false, mapping: 'spawnManager' },
-                { key: 'InGameUpgradeManager', plugin: InGameUpgradeManager, start: false, mapping: 'inGameUpgradeManager' },
+                { key: 'InGameUpgradeManager', plugin: InGameUpgradeManager, start: true, mapping: 'inGameUpgradeManager' },
             ]
         }
     }

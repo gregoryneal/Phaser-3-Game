@@ -138,17 +138,18 @@ export class Player extends Phaser.Plugins.ScenePlugin {
         }
 
         //relative to this game object for some reason
-        //this.healthbarShadow = this.scene.add.graphics();
-        //this.healthbar = this.scene.add.graphics();
-        //this.buildHealthbar();
+        this.healthbarShadow = this.scene.add.graphics();
+        this.healthbar = this.scene.add.graphics();
+        this.buildHealthbar();
 
         //this.castCircle = this.scene.add.circle(this.castPos.x, this.castPos.y, 40);
         //this.castCircle.setStrokeStyle(2, 0x1a65ac);
         this.updateCastPos();
-        //register the overlap between the player and enemy groups
+        //register the overlap between the player and enemy groups.
         //being overlapped is how the player takes damage, we don't
-        //want to collide with them for the most part
+        //want to collide with them for the most part, 
         this.scene.registerOverlap(this.currentSprite);
+        //this.scene.registerCollision(this.currentSprite); //do something like this if we want to collide with colliders
 
         //this.scene.events.on('preupdate', this.preUpdate);
     }
@@ -162,7 +163,7 @@ export class Player extends Phaser.Plugins.ScenePlugin {
     addSpellPool(spellPool) {
         if (!this.spellPools.has(spellPool.name)) {
             this.spellPools.set(spellPool.name, spellPool);
-            spellPool.createGroup();
+            spellPool.createGroup(this.scene);
         }
     }
 
@@ -192,7 +193,7 @@ export class Player extends Phaser.Plugins.ScenePlugin {
             this.nextLevel += this.xpInterval();
             this.level += 1;
             //show level up screen
-            this.scene.pauseUpgrade();
+            //this.scene.pauseUpgrade();
         }
     }
 
@@ -352,7 +353,7 @@ export class Player extends Phaser.Plugins.ScenePlugin {
         this.drawHealthbar();
 
         if (this.hp <= 0) {
-            this.die();
+            //this.die();
         }
     }
 

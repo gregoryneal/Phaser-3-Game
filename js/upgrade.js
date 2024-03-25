@@ -599,7 +599,9 @@ export class InGameUpgradeManager extends Phaser.Plugins.ScenePlugin {
 
     //call this from create method of scene
     //build everything here, also call createGroup() on each spellPool
-    init() {
+    boot() {
+        //console.log('start upgrade');
+
         this.allSpellPools.set('gatling-beam', new GatlingBeamPool(this.scene, this.scene.player, 'gatling-beam'))
         .set('grenade-drop', new GrenadeDropPool(this.scene, this.scene.player, 'grenade-drop'))
         .set('meteorimpact', new MeteorImpactPool(this.scene, this.scene.player, 'meteorimpact'));

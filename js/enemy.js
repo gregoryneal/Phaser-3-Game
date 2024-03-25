@@ -1,9 +1,12 @@
+import { Directions, EnemyActions, SpawnPatterns } from './definitions.js';
+import { getDirectionVector, isString } from './helper.js';
 //EnemyPool is responsible for managing a pool of enemies,
 //it should spawn them, animate them, and kill them etc
 //this is a base class meant to be derived from.
 //an enemy manager class will hold a list of these
 //pools to spawn each game
-//config: https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.GameObjects.Group.GroupConfig
+//config: https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.GameObjects.Group.
+//TODO: replace classes that derive from EnemyPool to instead derive from EnemyPool2
 class EnemyPool extends Phaser.GameObjects.GameObject {
 
     constructor(scene, config) {
@@ -225,18 +228,20 @@ class EnemyPool2 extends Phaser.GameObjects.GameObject {
             maxSize: config.group.maxSize,
             active: false,
             visible: false,
-            createCallback: this.enemyCreateCallback,
+            createCallback: this.enemyCreateCallback.bind(this),
         };
     }
 
-    enemyCreateCallback(enemy) {
+    enemyCreateCallback(enemy) {    
         enemy.setupWithConfig(this.config);
     }
 
     createGroup() {        
-        this.group = this.scene.physics.add.group(this.config);
-        this.scene.registerOverlap(this.group); //overlaps happen between all enemies and all spells and between all enemies and the player
-        this.scene.registerCollider(this.group, this.collideWithSelf, this.collideWithOthers); //collisions happen if we allow them
+        this.group = this.scene.physics.add.group(this.groupConfig);
+        //overlaps happen between all enemies and all spells and between all enemies and the player
+        this.scene.registerOverlap(this.group); 
+        //collisions happen if we allow them
+        this.scene.registerCollider(this.group, this.collideWithSelf, this.collideWithOthers); 
     }    
 
     stopSpawning(destroyAllEnemies = false) {
@@ -309,7 +314,7 @@ class EnemyPool2 extends Phaser.GameObjects.GameObject {
             enemyPool.startSpawning(repeatDelay, repeat, repeatDelay, useSpawnTimer);
         }
 
-        //console.log(`spawnTimerHandler(enemyPool=${enemyPool.textureKey}, repeat=${repeat}, repeatDelay=${repeatDelay}, useSpawnTimer=${useSpawnTimer})`);
+        console.log(`spawnTimerHandler(enemyPool=${enemyPool.textureKey}, repeat=${repeat}, repeatDelay=${repeatDelay}, useSpawnTimer=${useSpawnTimer})`);
     }
 
     setDifficulty(difficulty) {
@@ -321,12 +326,12 @@ class EnemyPool2 extends Phaser.GameObjects.GameObject {
 
     //retun the spawn timer based on the difficulty value which is an integer
     calculateSpawnTimer(difficulty) {
-        return 1000;
+        return this.config.pool.spawnTimer;
     }
 
     //return the enemy count per spawn based on the difficulty setting
     calculateEnemyCount(difficulty) {
-        return 1;
+        return this.config.pool.waveConfig.enemiesPerWave;
     }
 
     //spawn function is a function from spawnManager that takes enemies and other params
@@ -359,6 +364,9 @@ class EnemyPool2 extends Phaser.GameObjects.GameObject {
 
         if (this.scene.isPaused) return;
 
+        console.log(`Group size: ${this.group.children.size}`);
+        console.log(`Max group size: ${this.group.maxSize}`);
+
         //.log("TOTAL CHILDREN: " + this.group.children.size);
         if (this.group == null) {
             console.log("NULL GROUP on ENEMY_POOL");
@@ -367,16 +375,26 @@ class EnemyPool2 extends Phaser.GameObjects.GameObject {
 
         var enemies = [];
         for (var i = 0; i < this.enemyCount; i++) {
-            var enemy = this.group.getFirstDead(true, 0, 0);
+            //create a new one if there is no disabled ones in the group yet
+            var enemy = this.group.getFirst(false, true, x, y, this.config.group.texture, 0, false);/*
+            var i = 100;
+            //try to get a new enemy if this one is already included in the array
+            while(enemies.includes(enemy) && i > 0) {
+                enemy = this.group.get(x, y);
+                i--;
+            }*/
             if (!enemy) {
                 console.error("SOMETHING WRONG WITH ENEMIES SPAWNING METHOD");
             }
+            //set enemy active so it wont get picked up next pass
+            enemy.setActive(true);
+            //if (enemies.includes(enemy)) break; //we tried 101 times to get a new enemy fuck it we are done
             enemies.push(enemy);
         }
 
         if (this.config.pool.waveConfig) {
             //use the level config to figure out how to spawn enemies
-            this.scene.spawnManager.spawnOnEdgeOfScreen(enemies, this.staggerDelay, this.staggerVariance);
+            this.scene.spawnManager.spawnFromPreset(enemies, this.config.pool.waveConfig);
         }
     }
 
@@ -418,21 +436,29 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     //when an EnemyPool2 is dynamically generating enemies, it will create a new enemy class
-    //and call this function, supplying the enemy from the customEnemies array in the levels.json
+    //and call this function, supplying the enemy from the enemies array in the levels.json
     //config file. 
     setupWithConfig(config) {
         this.config = config;
+        this.name = config.name;
+        this.setDepth(10);
         //values come from the arcade sprite class
         if (config.alpha) this.setAlpha(config.alpha);
         //config should only have one of either bodySize or circleRadius
         if (config.bodySize) this.setBodySize(config.bodySize.width, config.bodySize.height, config.bodySize.center);
+        //if (config.scale) this.setScale(config.scale);
         if (config.circleRadius) this.setCircle(config.circleRadius);
         if (config.bounce) this.setBounce(config.bounce);
         if (config.speed) this.speed = config.speed;
-        if (config.health) this.health = config.health;
+        if (config.health) {
+            this.baseHealth = config.health;
+            this.health = config.health;
+        }
         if (config.damage) this.damage = config.damage;
         if (config.xp) this.xp = config.xp;
-        if (config.onOverlap) this.onOverlap = config.onOverlap;
+
+        if (config.moves) this.body.moves = config.moves;
+        if (config.onOverlap) this.body.onOverlap = config.onOverlap;
         if (config.displaySize) this.setDisplaySize(config.displaySize.x, config.displaySize.y);
         if (config.offset) this.setOffset(config.offset.x, config.offset.y);
         if (config.pushable) this.setPushable(config.pushable);
@@ -442,7 +468,21 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
     //reset the hp etc
     resetOnAlive() {
         //console.log(this);
-        this.body.setMaxSpeed(this.speed);
+        if (this.config.angularVelocity) {
+            let av = this.config.angularVelocity;
+            if (this.config.randomAngularVelocity) {
+                av += (Math.random() * this.config.randomAngularVelocity.coeff) + this.config.randomAngularVelocity.offset;
+            }
+            this.setAngularVelocity(av);
+        }
+        if (this.speed) {
+            let s = this.config.speed;
+            if (this.config.randomSpeed) {
+                s += (Math.random() * this.config.randomSpeed.coeff) + this.config.randomSpeed.offset;
+            }
+            this.setMaxVelocity(s);
+        }
+        //welcome to life brother, help us kill this invader to our lands!
         this.isDying = false;
         this.timeAlive = 0;
         this.health = this.baseHealth;
@@ -452,24 +492,62 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
 
         if (this.config.onReset) {
             let p = this.config.onReset;
-            if (p.onOverlap) this.onOverlap = p.onOverlap;
-            if (p.onCollide) this.onCollide = p.onCollide;
+            if (p.onOverlap) this.body.onOverlap = p.onOverlap;
+            if (p.onCollide) this.body.onCollide = p.onCollide;
             //play animation then do a preconfigured action afterwards
-            if (p.onceCallback && p.onceCallback.key) {
-                this.once(`animationcomplete-${p.onceCallback.key}`, function() {
-
-                    if (p.onceCallback.launchTowardsPlayer) {
-                        this.enemy.scene.physics.moveTo(this.enemy, this.target.currentSprite.x, this.target.currentSprite.y, this.enemy.speed);
-                    }
-                    if (p.onceCallback.explode) {}
-                    if (p.onceCallback.vacuum) {}
-                    if (p.onceCallback.die) { this.die(); }
-                }, {enemy: this, target: this.scene.player});
-                this.play(p.onceCallback.key);
+            //actions are configured in definitions.js in EnemyActions
+            //p.once should be true if we want to do the specified action after the 
+            //animation is complete, make sure that if p.once is true then
+            //the animation doesn't repeat forever.
+            if (p.once && p.animation && p.action) {
+                let anim = {};
+                //if the animation is a string build an animation config from it
+                //otherwise use the animation object to play the animation
+                if (isString(p.animation)) anim.key = p.animation;
+                else anim = p.animation;
+                //assume p.animation is a config
+                this.once(`animationcomplete-${anim.key}`, function() {
+                    this.enemy.doAction(this.action);
+                }, {enemy: this, action: p.action});
+                this.play(p.animation);
             } else {
-
+                //play the animation, do the action, or both
                 if (p.animation) this.play(p.animation);
+                if (p.action) this.doAction(p.action);
             }
+        }
+    }
+
+    //do a preconfigured action based on a keyword in the configuration data
+    doAction(action) {
+        switch (action) {
+            case EnemyActions.TARGET_PLAYER:
+                //start following the player
+                this.target = this.scene.player.currentSprite;
+                break;
+            case EnemyActions.TO_PLAYER: 
+                //go towards the location the player was at when this was called
+                let target = {x: this.scene.player.currentSprite.x, y: this.scene.player.currentSprite.y};
+                this.scene.physics.moveTo(this, target.x, target.y, this.speed);
+                break;
+            case EnemyActions.EXPLODE:
+                //explode, do damage in an area and stuff
+                break;
+            case EnemyActions.VACUUM: 
+                //suck up all the nearby consumables and delete them
+                break;
+            case EnemyActions.DIE:
+                //just die, unlucky to be the enemy that gets this called
+                this.die();
+                break;
+            case EnemyActions.MOVE_IN_LINE:
+                //move in a straight line, look for a direction in the config.onReset
+                //return the direction or if one isn't found default to down
+                let dir = this.config.onReset.direction ?? Directions.DOWN;
+                let v = getDirectionVector(dir);
+
+                this.setVelocity(v.x * this.speed, v.y * this.speed);
+                break;
         }
     }
 
@@ -496,13 +574,13 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
 
         if (this.config.onDie) {
             let d = this.config.onDie;
-            if (d.onOverlap) this.onOverlap = d.onOverlap;
-            if (d.onCollide) this.onCollide = d.onCollide;
+            if (d.onOverlap) this.body.onOverlap = d.onOverlap;
+            if (d.onCollide) this.body.onCollide = d.onCollide;
             if (d.animation) {
                 let animation = {};
                 //if d.animation is an animation key then play it, but it can also 
                 //be an animation configuration object, so we much check first
-                if (typeof d.animation === 'string' || d.animation instanceof String) {
+                if (isString(d.animation)) {
                     //d.animation is a string
                     animation.key = d.animation;
                 } else {
@@ -514,14 +592,20 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
             } else {
                 this._die();
             }
+        } else {
+            //tell the physics bodies not to overlap or collide while dying
+            //this can be configured for more custom behavior by setting onOverlap or onCollide
+            //in the onDie part of the enemy config object.
+            this.body.onOverlap = false;
+            this.body.onCollide = false;
+            this._die();
         }
     }
 
     //internal die method callback
     _die() {
-        this.setActive(false);
-        this.setVisible(false);
-        this.disableBody();
+        //disableBody(disableGameObject=false, hideGameObject=false)
+        this.disableBody(true, true); //sets active and visible to false as well
         //remove from enemymanager enemies map
         this.scene.enemyManager.enemies.delete(this.uuid);
     }
@@ -541,15 +625,15 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
 
                 let timeout = 100;
                 if (h.timeout) timeout = h.timeout;
-                setTimeout(this.tintTimeoutHandler, timeout);
+                setTimeout(this.tintTimeoutHandler, timeout, this);
 
                 if (h.takeDamage) this.takeDamage(value);
             }
         }
     }
 
-    tintTimeoutHandler() {
-        this.clearTint();
+    tintTimeoutHandler(enemy) {
+        enemy.clearTint();
     }
 
     //this gets called directly from spellUpgrade hits 
@@ -607,25 +691,20 @@ export class EnemyManager extends Phaser.Plugins.ScenePlugin {
         this.instantiatedEnemyPools = new Map();
         this.activePools = []; //an array of active enemy pools, only spawn enemies added to this array
         this.enemySpawnTimer = new Map(); //maps a enemy pool key to a spawn timer integer so we can clear specific enemy spawn timers
-
         this.enemies = new Map(); //enemies register themselves here and deregister when they die
-
         this.difficulty = 100; //this cannot be lower than 1
-
-        //used for closest enemy calculations
-        this._lowestDist = 10000000;
-        this._closestEnemy;
     }
 
     //setup the enemy pools map
     //called by baseplugin
-    init() {
+    boot() {
         //these are preconfigured enemies, if we start copying
         //a custom enemy class a bunch it would help to turn it
         //into a class here
+        /*
         this.addEnemyPool('pizzas', PizzaEnemyPool);
         this.addEnemyPool('tacos', TacoTrajectileEnemyPool);
-        this.addEnemyPool('bats', BatsPool);
+        this.addEnemyPool('bats', BatsPool);*/
     }
 
     addEnemyPool(key, enemyPool) {
@@ -649,45 +728,19 @@ export class EnemyManager extends Phaser.Plugins.ScenePlugin {
         this.stopSpawningEnemies(true);
         //delete all instantiated pools
         this.instantiatedEnemyPools = new Map();
+        this.activePools = [];
     }
-
-    //set the state of the enemy manager to the start of the level
-    //instantiate the enemy pool classes
-    //set the enemy pools to the initial difficulty
-    initializeEnemyPools(activePools) {
-        if (activePools === undefined) activePools = ['pizzas', 'tacos', 'bats'];
-        this.activePools = activePools;
-        this.difficulty = 1;
-
-        //set the initial difficulty by just changing the class variable
-        for(let i = 0; i < activePools.length; i++) {
-            //don't create unless we have a type for this pool and we haven't already created it
-            //we maybe could remove this second requirement it's not necessary, and it would allow
-            //multiple configurations of the same pool in a scene. TODO: consider this...
-            if (this.enemyPools.has(activePools[i]) && !this.instantiatedEnemyPools.has(activePools[i])) {
-
-                let type = this.enemyPools.get(activePools[i]);
-                let pool = new type(this.scene);
-
-                //create the group
-                pool.createGroup();
-                //set the difficulty
-                pool.setDifficulty(this.difficulty);
-                this.instantiatedEnemyPools.set(activePools[i], pool);
-            }
-        }
-    }
-
+    
     //initialize custom enemy pools that were created by config files
     initializeCustomPools(enemyPools) {
         for (let i = 0; i < enemyPools.length; i++) {
-
+            console.log(enemyPools[i].name);
             //NOTE: the new pool object doesn't get added to this.enemyPools class map
             //keep this in mind
-            let name = enemyPools[i].pool.name;
+            let name = enemyPools[i].name;
             if (!this.instantiatedEnemyPools.has(name)) {
+                //console.log(`adding ${name} to this.activePools`);
                 let pool = new EnemyPool2(this.scene, enemyPools[i]);
-
                 pool.createGroup();
                 pool.setDifficulty(this.difficulty);
                 this.activePools.push(name);
@@ -696,15 +749,10 @@ export class EnemyManager extends Phaser.Plugins.ScenePlugin {
         }
     }
 
-    //apply it to the Slicer enemy so it can fire in the direction
-    //of the nearest enemy each time.
     //Get nearest enemy to point x, y
     getEnemyNearest(x, y) {
         //console.log(this.enemies);
         if (this.enemies.length == 0) return false;
-
-        this._lowestDist = 10000000;
-        this._closestEnemy = null;
         if (!x) {
             x = this.scene.player.currentSprite.x + (this.scene.player.currentSprite.width / 2);
             y = this.scene.player.currentSprite.y + (this.scene.player.currentSprite.height / 2);
@@ -724,13 +772,16 @@ export class EnemyManager extends Phaser.Plugins.ScenePlugin {
     }
 
     //start spawning all active pools
+    //will repeat
     startSpawningEnemies(initialDelay=0) {
-        console.log(`startSpawningEnemies(${initialDelay}){}`);
+        //console.log(`startSpawningEnemies(${initialDelay}){}`);
+        //console.log(this.activePools.join(', '));
         this.activePools.forEach(function(value) {
             if(this.instantiatedEnemyPools.has(value)) {
                 var pool = this.instantiatedEnemyPools.get(value);
-                console.log(`this.instantiatedEnemyPools.has(${value})`);
-                pool.startSpawning(initialDelay, true); //initialdelay, repeat, useSpawnTimer=true, repeatDelay=initialdelay
+                //console.log(`this.instantiatedEnemyPools.has(${value})`);
+                //initialdelay, repeat, useSpawnTimer=true, repeatDelay=initialdelay
+                pool.startSpawning(initialDelay, true); 
             }
         }, this);
     }
@@ -794,6 +845,74 @@ export class EnemyManager extends Phaser.Plugins.ScenePlugin {
 
 class PizzaEnemyPool extends EnemyPool {
     constructor(scene) {
+        var conf = {
+            name: "pizzas",
+            speed: 100,
+            health: 15,
+            damage: 1,
+            xp: 1,                
+            onOverlap: true,
+            circleRadius: 28,
+            bounce: 1,
+            displaySize: {
+                x: 16,
+                y: 16
+            },
+            attacks: [{
+                name: "testAttack1",
+                projectile: false,
+                aura: true
+            }],
+            group: {
+                texture: "pizza",
+                maxSize: 300
+            },
+            pool: {
+                name: "testPool1",
+                collideWithSelf: true,
+                collideWithOthers: false,
+                spawnTimer: 1000,
+                staggerDelay: 0,
+                staggerVariance: 0,
+                waveConfig: {
+                    enemiesPerWave: 10,
+                    shape: "random",
+                    radius: 400,
+                    targetPlayer: true ,
+                }
+            },
+            onDie: {
+                onOverlap: false,
+                onCollide: false,
+                animation: {
+                    key: "batsoutline-die",
+                    frameRate: 6
+                }
+            },
+            onReset: {
+                onOverlap: true,
+                onCollide: false,
+                onceCallback: {
+                    key: "animationcomplete-taco-build",
+                    launchTowardsPlayer: false,
+                    explode: false,
+                    vacuum: true,
+                    die: false
+                },
+                animation: {
+                    key: "batsoutline-fly",
+                    repeat: -1,
+                    randomFrame: true,
+                    frameRate: 6
+                }
+            },
+            onHit: {
+                tint: "0xff0000",
+                timeout: 100,
+                takeDamage: true
+            }
+        }
+
         var config = {
             key: 'pizza', //key used to load aseprite files make sure the enemy art is images/enemies/pizza.png
             classType: Slice,
@@ -827,22 +946,86 @@ class Slice extends Enemy {
         this.health = 15;
         this.baseHealth = 15;
     }
-
-    resetOnAlive() {
-        super.resetOnAlive();
-        this.setAngularVelocity(-400 + (Math.random() * 800));
-        this.body.setMaxSpeed(this.speed * (1 + Math.random() * .5));
-        this.play({
-            key: 'pizza-spin', 
-            repeat: -1, 
-            randomFrame: true,
-            frameRate: Math.floor((Math.random() * 5) + 1)
-        });
-    }
 }
 
 class BatsPool extends EnemyPool {
     constructor(scene) {
+        var conf = {
+            name: "pizzas",
+            speed: 100,
+            health: 10,
+            damage: 1,
+            xp: 1,                
+            onOverlap: true,
+            circleRadius: 28,
+            bounce: 1,
+            displaySize: {
+                x: 16,
+                y: 16
+            },
+            offset: { 
+                x: 6,
+                y: 3
+            },
+            attacks: [{
+                name: "testAttack1",
+                projectile: false,
+                aura: true
+            }],
+            group: {
+                texture: "pizza",
+                maxSize: 300
+            },
+            pool: {
+                name: "testPool1",
+                collideWithSelf: true,
+                collideWithOthers: false,
+                spawnTimer: 1000,
+                staggerDelay: 0,
+                staggerVariance: 0,
+                waveConfig: {
+                    enemiesPerWave: 10,
+                    shape: "line|circle|box|bunched|etc",
+                    radius: 400,
+                    sideLength: 25,
+                    startOffset: { "x": 0, "y": 300 },
+                    targetOffset: { "x": 0, "y": -400 },
+                    targetPlayer: false,
+                    targetCenter: false
+                }
+            },
+            onDie: {
+                onOverlap: false,
+                onCollide: false,
+                animation: {
+                    key: "batsoutline-die",
+                    frameRate: 6
+                }
+            },
+            onReset: {
+                onOverlap: true,
+                onCollide: false,
+                onceCallback: {
+                    key: "animationcomplete-taco-build",
+                    launchTowardsPlayer: false,
+                    explode: false,
+                    vacuum: true,
+                    die: false
+                },
+                animation: {
+                    key: "batsoutline-fly",
+                    repeat: -1,
+                    randomFrame: true,
+                    frameRate: 6
+                }
+            },
+            onHit: {
+                tint: "0xff0000",
+                timeout: 100,
+                takeDamage: true
+            }
+        }
+
         var config = {
             key: 'batsoutline', //key used to load aseprite files make sure the enemy art is images/enemies/{key}.png
             classType: Bats,
@@ -899,10 +1082,6 @@ class BatsPool extends EnemyPool {
         }
 
         this.spawnManager.spawnInCircleMoveToCenter(bats, this.scene.player.castPos.x, this.scene.player.castPos.y, this.scene.game.canvas.width * 2);
-        
-
-        //do this manually you can't make them spawn in a circle easily i guess
-        //maybe make a helper function
     }
 }
 
@@ -968,6 +1147,83 @@ class TacoTrajectile extends Enemy {
 
 class TacoTrajectileEnemyPool extends EnemyPool {
     constructor(scene) {
+        var conf = {
+            name: "pizzas",
+            speed: 100,
+            health: 10,
+            damage: 1,
+            xp: 1,                
+            onOverlap: true,
+            circleRadius: 28,
+            bounce: 1,
+            displaySize: {
+                x: 16,
+                y: 16
+            },
+            offset: { 
+                x: 6,
+                y: 3
+            },
+            attacks: [{
+                name: "testAttack1",
+                projectile: false,
+                aura: true
+            }],
+            group: {
+                texture: "pizza",
+                maxSize: 300
+            },
+            pool: {
+                name: "testPool1",
+                collideWithSelf: true,
+                collideWithOthers: false,
+                spawnTimer: 1000,
+                staggerDelay: 0,
+                staggerVariance: 0,
+                waveConfig: {
+                    enemiesPerWave: 10,
+                    shape: "line|circle|box|bunched|etc",
+                    radius: 400,
+                    sideLength: 25,
+                    startOffset: { "x": 0, "y": 300 },
+                    targetOffset: { "x": 0, "y": -400 },
+                    targetPlayer: false,
+                    targetCenter: false
+                }
+            },
+            onDie: {
+                onOverlap: false,
+                onCollide: false,
+                animation: {
+                    key: "batsoutline-die",
+                    frameRate: 6
+                }
+            },
+            onReset: {
+                onOverlap: true,
+                onCollide: false,
+                onceCallback: {
+                    key: "animationcomplete-taco-build",
+                    launchTowardsPlayer: false,
+                    explode: false,
+                    vacuum: true,
+                    die: false
+                },
+                animation: {
+                    key: "batsoutline-fly",
+                    repeat: -1,
+                    randomFrame: true,
+                    frameRate: 6
+                }
+            },
+            onHit: {
+                tint: "0xff0000",
+                timeout: 100,
+                takeDamage: true
+            }
+        }
+
+
         var config = {
             key: 'taco',
             classType: TacoTrajectile,
@@ -979,7 +1235,6 @@ class TacoTrajectileEnemyPool extends EnemyPool {
                 taco.setCircle(8);
                 taco.setDisplaySize(16,16);
                 taco.setBounce(1);
-                taco.moves = true;
             },
         };
         super(scene, config);

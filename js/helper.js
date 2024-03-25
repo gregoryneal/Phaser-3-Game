@@ -1,5 +1,8 @@
 //convert a screen space coordinate to a world space
 //x is from 0 to this.cameras.main.worldView.width
+
+import { Directions } from "./definitions.js";
+
 //y is from 0 to this.cameras.main.worldView.height
 export var getPositionRelativeToViewport = function(scene, x, y) {
     //console.log(scene);
@@ -10,7 +13,7 @@ export var getPositionRelativeToViewport = function(scene, x, y) {
     `world y: ${this.input.mousePointer.worldY}`*/
     let x2 = scene.cameras.main.worldView.x + x;
     let y2 = scene.cameras.main.worldView.y + y;
-    console.log(`{ x: ${x2}, y: ${y2} }`);
+    //console.log(`{ x: ${x2}, y: ${y2} }`);
     return {x: x2, y: y2};
 }
 
@@ -67,7 +70,7 @@ export class SequentialUnlockable {
 //may also be removed if maxLength is too small to allow for them
 //we assume number is an integer
 export var abbreviateNumber = function(number, decPlaces=1) {
-    console.log('abbreviatuing number');
+    //console.log('abbreviatuing number');
     // 2 decimal places => 100, 3 => 1000, etc
     decPlaces = Math.pow(10, decPlaces)
 
@@ -107,4 +110,34 @@ export var millisToMinutesAndSeconds = function(millis) {
         (minutes+1) + ":00" :
         minutes + ":" + (seconds < 10 ? "0" : "") + seconds
     );
+}
+
+export var isString = function(val) {
+    return typeof val === 'string' || val instanceof String
+}
+
+export var getOppositeDirection = function(dir) {
+    switch (dir) {
+        case Directions.DOWN:
+            return Directions.UP;
+        case Directions.UP:
+            return Directions.DOWN;
+        case Directions.LEFT:
+            return Directions.RIGHT;
+        case Directions.RIGHT:
+            return Directions.LEFT;
+    }
+}
+
+export var getDirectionVector = function(dir) {
+    switch (dir) {
+        case Directions.DOWN:
+            return {x: 0, y: 1};
+        case Directions.UP:
+            return {x: 0, y: -1};
+        case Directions.LEFT:
+            return {x: -1, y: 0};
+        case Directions.RIGHT:
+            return {x: 1, y: 0};
+    }
 }

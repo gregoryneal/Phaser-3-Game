@@ -34,65 +34,8 @@
             }
         ],
         "playerSpawnTime": 1000,
-        "enemies": ["pizzas", "tacos"],
+        "enemies": ["bats-bunch", "pizzas-left"],
         "initialDelay": 2000,
-        "customEnemyPools": [
-            {
-                "name": "testEnemy1",
-                "speed": 100,
-                "health": 10,
-                "damage": 1,
-                "xp": 1,                
-                "onOverlap": true,
-                "circleRadius": 28,
-                "bounce": 1,
-                "displaySize": {
-                    "x": 16,
-                    "y": 16
-                },
-                "offset": { 
-                    "x": 6,
-                    "y": 3
-                },
-                "attacks": [{
-                    "name": "testAttack1",
-                    "projectile": false,
-                    "aura": true
-                }],
-                "group": {
-                    "texture": "pizza",
-                    "maxSize": 300
-                },
-                "pool": {
-                    "name": "testPool1",
-                    "collideWithSelf": false,
-                    "collideWithOthers": false,
-                    "spawnTimer": 1000,
-                    "staggerDelay": 0,
-                    "staggerVariance": 0,
-                    "waveConfig": {
-                        "enemiesPerWave": 10,
-                        "shape": "line",
-                        "startOffset": { "x": 0, "y": 300 },
-                        "targetOffset": { "x": 0, "y": -400 },
-                        "targetPlayer": false
-                    }
-                },
-                "onDie": {
-                    "onOverlap": false,
-                    "onCollide": false
-                },
-                "onReset": {
-                    "onOverlap": true,
-                    "onCollide": false
-                },
-                "onHit": {
-                    "tint": "0xff0000",
-                    "timeout": 100,
-                    "takeDamage": true
-                }
-            }
-        ],
         "bosses": [
             {
                 "name": "boss1",
@@ -104,5 +47,254 @@
             }
         ],
         "customBosses": []
-    }
+    },
+    "enemies": [
+        {
+            "name": "pizzas",
+            "speed": 100,
+            "randomSpeed": {
+                "coeff": 50,
+                "offset": 0
+            },
+            "angularVelocity": 200,
+            "randomAngularVelocity": {
+                "coeff": 800,
+                "offset": 0
+            },
+            "health": 15,
+            "damage": 1,
+            "xp": 1,                
+            "onOverlap": true,
+            "circleRadius": 8,
+            "bounce": 1,
+            "displaySize": {
+                "x": 64,
+                "y": 64
+            },
+            "offset": { 
+                "x": 0,
+                "y": 0
+            },
+            "attacks": [{
+                "name": "testAttack1",
+                "projectile": false,
+                "aura": true
+            }],
+            "group": {
+                "texture": "pizza",
+                "maxSize": 300
+            },
+            "pool": {
+                "name": "pizza-pool-1",
+                "collideWithSelf": true,
+                "collideWithOthers": false,
+                "spawnTimer": 1000,
+                "waveConfig": {
+                    "staggerDelay": 0,
+                    "staggerVariance": 0,
+                    "enemiesPerWave": 1,
+                    "shape": "random-edge",
+                    "radius": 10
+                }
+            },
+            "onReset": {
+                "onOverlap": true,
+                "onCollide": false,
+                "animation": {
+                    "key": "pizza-spin", 
+                    "repeat": -1, 
+                    "randomFrame": true,
+                    "frameRate": 3
+                },
+                "action": "targetPlayer"
+            },
+            "onHit": {
+                "tint": "0xff0000",
+                "timeout": 100,
+                "takeDamage": true
+            }
+        },
+        {
+            "name": "pizzas-left",
+            "speed": 100,
+            "randomSpeed": {
+                "coeff": 50,
+                "offset": 0
+            },
+            "angularVelocity": 200,
+            "randomAngularVelocity": {
+                "coeff": 800,
+                "offset": 0
+            },
+            "health": 15,
+            "damage": 1,
+            "xp": 1,                
+            "onOverlap": true,
+            "circleRadius": 8,
+            "bounce": 1,
+            "displaySize": {
+                "x": 64,
+                "y": 64
+            },
+            "offset": { 
+                "x": 0,
+                "y": 0
+            },
+            "attacks": [{
+                "name": "testAttack1",
+                "projectile": false,
+                "aura": true
+            }],
+            "group": {
+                "texture": "pizza",
+                "maxSize": 300
+            },
+            "pool": {
+                "name": "pizza-pool-2",
+                "collideWithSelf": true,
+                "collideWithOthers": false,
+                "spawnTimer": 10000,
+                "waveConfig": {
+                    "staggerDelay": 0,
+                    "staggerVariance": 0,
+                    "enemiesPerWave": 10,
+                    "shape": "line",
+                    "radius": 500,
+                    "length": 550
+                }
+            },
+            "onReset": {
+                "onOverlap": true,
+                "onCollide": false,
+                "animation": {
+                    "key": "pizza-spin", 
+                    "repeat": -1, 
+                    "randomFrame": true,
+                    "frameRate": 3
+                },
+                "action": "moveInLine",
+                "direction": "left"
+            },
+            "onHit": {
+                "tint": "0xff0000",
+                "timeout": 100,
+                "takeDamage": true
+            }
+        },
+        {
+            "name": "bats-bunch",
+            "speed": 30,
+            "health": 30,
+            "damage": 1,
+            "xp": 1,                
+            "onOverlap": true,
+            "circleRadius": 8,
+            "bounce": 1,
+            "displaySize": {
+                "x": 64,
+                "y": 64
+            },
+            "offset": { 
+                "x": 8,
+                "y": 5
+            },
+            "group": {
+                "texture": "batsoutline",
+                "maxSize": 3000
+            },
+            "pool": {
+                "name": "batpool",
+                "collideWithSelf": true,
+                "collideWithOthers": false,
+                "spawnTimer": 30000,
+                "waveConfig": {
+                    "staggerDelay": 10,
+                    "staggerVariance": 0,
+                    "enemiesPerWave": 10,
+                    "shape": "random",
+                    "radius": 300
+                }
+            },
+            "onDie": {
+                "onOverlap": false,
+                "animation": {
+                    "key": "batsoutline-die",
+                    "frameRate": 6
+                }
+            },
+            "onReset": {
+                "onOverlap": true,
+                "animation": {
+                    "key": "batsoutline-fly",
+                    "repeat": -1,
+                    "randomFrame": true,
+                    "frameRate": 6
+                },
+                "action": "toPlayer"
+            },
+            "onHit": {
+                "tint": "0xff0000",
+                "timeout": 100,
+                "takeDamage": true
+            }
+        },
+        {
+            "name": "tacos",
+            "speed": 50,
+            "health": 60,
+            "damage": 0,
+            "xp": 1,
+            "circleRadius": 8,
+            "bounce": 1,
+            "displaySize": {
+                "x": 64,
+                "y": 64
+            },
+            "scale": 3,
+            "offset": { 
+                "x": 0,
+                "y": 0
+            },
+            "group": {
+                "texture": "taco",
+                "maxSize": 300
+            },
+            "pool": {
+                "name": "tacopool",
+                "collideWithSelf": true,
+                "collideWithOthers": false,
+                "spawnTimer": 5000,
+                "waveConfig": {
+                    "staggerDelay": 0,
+                    "staggerVariance": 0,
+                    "enemiesPerWave": 10,
+                    "shape": "circle",
+                    "radius": 100
+                }
+            },
+            "onDie": {
+                "onOverlap": false,
+                "onCollide": false,
+                "animation": {
+                    "key": "taco-eat",
+                    "frameRate": 4
+                }
+            },
+            "onReset": {
+                "onOverlap": true,
+                "onCollide": true,
+                "once": true,
+                "animation": {
+                    "key": "taco-build",
+                    "frameRate": 6
+                },
+                "action": "toPlayer"
+            },
+            "onHit": {
+                "tint": "0xff0000",
+                "timeout": 100,
+                "takeDamage": true
+            }
+        }
+    ]
 }

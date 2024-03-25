@@ -117,6 +117,9 @@ export class PreloadScene extends Phaser.Scene {
         //spell anims
         this.anims.createFromAseprite('explosion-1');
         this.anims.createFromAseprite('explosion-2');
+        this.anims.createFromAseprite('grenade-small');
+        this.anims.createFromAseprite('meteorimpact');
+        
 
         //enemy anims
         this.anims.createFromAseprite('bat');
@@ -2036,6 +2039,7 @@ export class BaseLevel extends Phaser.Scene {
         //becomes true the first time the pizza party button is clicked
         //only resets to false on page reload
         this.gameStarted = false;
+        this.startTime = 0;
 
         //overlap/collider groups are objects that store information about which sprite groups should generate overlap/collider events against what other sprites
         this.overlapMap = new Map(); //a map of overlaps that have been created
@@ -2049,7 +2053,7 @@ export class BaseLevel extends Phaser.Scene {
         this.playerSpawn = {x: this.worldSize.width/2, y: this.worldSize.height/2};
         this.isUpgrading = false; //this indicates if the upgrade menu was generated, it tells the shop menu whether or not to draw an upgrade menu button
 
-        //set persistent values for player, spell pools and spells
+        //set persistent values for player, spell pools and spells                                                                                                                                                                           
         this.uiSceneKey = 'ui-scene';
 
         //these setIntervals or setTimeouts should be paushed when we pause the game
@@ -2064,6 +2068,7 @@ export class BaseLevel extends Phaser.Scene {
         //given by the level manager when this scene is created, it will correspond
         //to one of the level objects in levels.json
         this.load.json('levelConfig', 'files/config/levels.json', this.key);
+        this.load.json('enemyConfig', 'files/config/levels.json', "enemies");
     }
 
     init(data) {
@@ -2071,25 +2076,40 @@ export class BaseLevel extends Phaser.Scene {
 
     create(data) {      
         this.levelConfig = this.cache.json.get('levelConfig');
+        this.enemyConfig = this.cache.json.get('enemyConfig');
         
         //setup camera and world bounds        
         this.cameras.main.setBounds(0,0,this.worldSize.width,this.worldSize.height, false, false, false, false);
         this.physics.world.setBounds(0,0,this.worldSize.width,this.worldSize.height, false, false, false, false);
         this.cameras.main.centerOn(this.worldSize.width/2, this.worldSize.height/2);
 
-        //create enemies and an associated pool
-        if (this.levelConfig.customEnemyPools) {
-            this.enemyManager.initializeCustomPools(this.levelConfig.customEnemyPools);
+        if (this.levelConfig.enemies) {
+            let unconfiguredPools = [];
+            //run through all the enemies once and add the enemy pools that need to be initialized to a list
+            for (let i = 0; i < this.enemyConfig.length; i++) {
+                //if the enemy name is within the level config enemies list
+                //we should initialize that enemy pool
+                if (this.levelConfig.enemies.includes(this.enemyConfig[i].name)) {
+                    unconfiguredPools.push(this.enemyConfig[i]);
+                }
+            }
+            console.log("initializing regular enemy pools");
+            //init the enemy manager here, basically set up enemy pools and stuff for the beginning of the game
+            this.enemyManager.initializeCustomPools(unconfiguredPools);
+        } else {
+            console.log("no enemies in levelConfig");
         }
 
-        if (this.levelConfig.enemies) {
-            //init the enemy manager here, basically set up enemy pools and stuff for the beginning of the game
-            this.enemyManager.initializeEnemyPools(this.levelConfig.enemies);
-        }
+        console.log(this.enemyManager.activePools);
 
         //instead of defining callbacks for every possible overlap between enemies/spells, and players/enemies
         //we define a single callback and define onHit on every enemy, spell and the player
         //the player shouldn't get hurt by spells, unless they come from the enemy
+        //so in order to figure out what should be damaged by what, we define properties on objects that can overlap
+        //that determine if they can take damage. for example the player has an isPlayer property, and a spell has
+        //and isSpell property, enemies have and isEnemy property, etc. If the player overlaps the enemy, the player
+        //has onHit called on it, with the gameobject, and the damage value that should be inflicted. but first, player
+        //checks if the property gameobject.isEnemy exists, then takes damage based on the damage value if it does.
         this.physics.world.on('overlap', function(go1, go2, body1, body2) {
             var damage = 5; //default damage if something isn't set up right (haha makes it harder to find bugs future me bitch)
             var d12 = damage; //damage go1 inflicts on go2
@@ -2177,8 +2197,6 @@ export class BaseLevel extends Phaser.Scene {
             //so figure out the math bitch.
         }
 
-        //move player to front
-
         if (this.levelConfig.initialDelay) {
             setTimeout(this.beginningAnimations, this.levelConfig.initialDelay, this);
         } else {
@@ -2186,6 +2204,10 @@ export class BaseLevel extends Phaser.Scene {
         }
     }
 
+    //Play animations at the beginning of a level, for like cool intro stuff idk
+    //TODO: add config for player intro animations, or dialog for a story or something
+    //once that is done move the player to the center of the screen and do the callback
+    //which should include finally "starting" the game.
     beginningAnimations(scene) {
         scene.player.create();
         scene.spawnManager.create();
@@ -2224,8 +2246,9 @@ export class BaseLevel extends Phaser.Scene {
     }
 
     beginGame() {
+        this.startTime = this.time; //time property same as from update, it is paused when the scene is paused, so we can use it as long as we pause the game through this.scene.pause();
         this.giveSpellPool('gatling-beam');        
-        this.enemyManager.startSpawningEnemies(delay + 2000);
+        this.enemyManager.startSpawningEnemies(2000);
     }
 
     //called by the level manager when it starts a scene transition
@@ -2365,16 +2388,23 @@ export class BaseLevel extends Phaser.Scene {
     registerCollider(newCollider, canCollideWithSelf, canCollideWithOthers) {
         //don't register the same collision twice, we only want to register unseen collisions with all the current colliders
         if (this.colliderGroups.has(newCollider)) return;
+        //register a physics collision only with this same group
         if (canCollideWithSelf) {
-            if (this.colliderGroups.size == 0) {
+            //since they collide with themselves add a new collision here as well
+            this.physics.add.collider(newCollider, newCollider);
+            this.colliderGroups.add(newCollider);
+            this.colliderMap.set(newCollider, newCollider);
+            //if we haven't added anything to the collision group yet
+            /*if (this.colliderGroups.size == 0) {                
                 //since they collide with themselves add a new collision here as well
                 this.physics.add.collider(newCollider, newCollider);
                 this.colliderGroups.add(newCollider);
                 this.colliderMap.set(newCollider, newCollider);
-                return;
-            }
+                //return;
+            }*/
         }
 
+        //register a physics collision with all groups passed to this function that also has canCollideWithOthers = true
         if (canCollideWithOthers) {
             this.colliderGroups.forEach(function(value) {
                 if (this.obj.colliderMap.get(value) != this.newCollider && this.obj.colliderMap.get(this.newCollider) != value) {

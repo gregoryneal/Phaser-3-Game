@@ -56,7 +56,7 @@ class Spell extends Phaser.Physics.Arcade.Sprite {
     fire(x=this.scene.player.castPos.x, y=this.scene.player.castPos.y) {
 
         //get closest enemy, don't fire if there are no enemies nearby
-        var getEnemyNearest = this.scene.getEnemyManager().getEnemyNearest();
+        var getEnemyNearest = this.scene.enemyManager.getEnemyNearest();
         if (!getEnemyNearest || (getEnemyNearest[1].x == 0 && getEnemyNearest[1].y == 0)) {
             //returns false if there are no enemies spawned yet
             return;
@@ -129,20 +129,11 @@ class SpellPool extends Phaser.GameObjects.GameObject {
         this.config;
 
         //all the applied upgrades for the spells and the spell pool
-        this.spellUpgrades = new Map(); //when we create a new spell for the group pool thingy, we need to apply all these upgrades to the spell
+        this.spellUpgrades = new Map(); //when we create a new spell for the group pool thingy, we need to apply all these upgrades to the spell, this includes all persistent and in game upgrades, do not differentiate here
         this.spellPoolUpgrades = new Map(); //same deal as above maps a key to a SpellUpgrade, but these are for spellPools instead of spells
 
         this.emitter = new Phaser.Events.EventEmitter();
         //this.scene.load.aseprite(this.textureKey, 'images/spells/'+this.textureKey+'.png', 'images/spells/'+this.textureKey+'.json');
-    }
-
-    setScene(newScene) {
-        //stop spawning everything, and destroy all existing enemies before switching scenes
-
-
-        this.scene = newScene;
-
-        //regenerate all spells?
     }
 
     setConfig(config) {
@@ -187,8 +178,10 @@ class SpellPool extends Phaser.GameObjects.GameObject {
         }
     }
 
+    //make the phaser group for the enemy sprites, and add any persistent upgrades
+    //we may have accumulated
     createGroup(scene) {
-        scene.anims.createFromAseprite(this.textureKey);
+        //scene.anims.createFromAseprite(this.textureKey);
         //console.log(this.config);
         this.group = scene.physics.add.group(this.config);
 
@@ -200,6 +193,7 @@ class SpellPool extends Phaser.GameObjects.GameObject {
         //add all spellUpgrades to existing pool objects on creation of the group
         //now make sure each member of the group has the upgrade
         //if we create the group with upgrades pre applied we need to apply the upgrades to the spells
+        //TODO: Make this apply persistent upgrades instead of in game upgrades, at the moment I don't think we are applying any persistent upgrades to the spell pools upon level setup
         if (this.spellUpgrades.size > 0) {
             this.group.children.each(function(member) {
                 //loop through each spellUpgrade
@@ -376,7 +370,7 @@ export class GatlingBeamPool extends SpellPool {
 
                 gatlingbeam.currentPassThroughValue = 0;
                 //apply all upgrades to new members when we create more for the pool               
-                this.scene.upgradeManager.allSpellPools.get('gatling-beam').spellUpgrades.forEach(function(value) {
+                this.scene.inGameUpgradeManager.allSpellPools.get('gatling-beam').spellUpgrades.forEach(function(value) {
                     this.spell.addUpgrade(value);
                 }, {spellPool: this, spell: gatlingbeam});
             },
@@ -405,7 +399,7 @@ export class GrenadeDropPool extends SpellPool {
                 grenade.setOrigin(0.5, 0.5);
                 grenade.setOffset(0); //aligns the physics body with the sprite
                 grenade.spellPool = this; //set the spellpool reference
-                this.scene.upgradeManager.allSpellPools.get('grenade-drop').spellUpgrades.forEach(function(value) {
+                this.scene.inGameUpgradeManager.allSpellPools.get('grenade-drop').spellUpgrades.forEach(function(value) {
                     this.addUpgrade(value);
                 }, grenade);
             },
@@ -598,7 +592,7 @@ export class MeteorImpactPool extends SpellPool {
                 meteor.setOrigin(.5, .5);
                 meteor.setOffset(0);
                 meteor.spellPool = this;
-                this.scene.upgradeManager.allSpellPools.get('meteorimpact').spellUpgrades.forEach(function(value) {
+                this.scene.inGameUpgradeManager.allSpellPools.get('meteorimpact').spellUpgrades.forEach(function(value) {
                     this.addUpgrade(value);
                 }, meteor);
             }
@@ -706,7 +700,7 @@ class TimeWarpPool extends SpellPool {
                 spell.setOrigin(0.5, 0); //top center is what we wanna rotate around
                 spell.setOffset(0); //aligns the physics body with the sprite
                 spell.spellPool = this; //set the spellpool reference
-                this.scene.upgradeManager.allSpellPools.get('timewarp').spellUpgrades.forEach(function(value) {
+                this.scene.inGameUpgradeManager.allSpellPools.get('timewarp').spellUpgrades.forEach(function(value) {
                     this.addUpgrade(value);
                 }, spell);
             },

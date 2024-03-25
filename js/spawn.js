@@ -1,3 +1,6 @@
+import { Directions, SpawnPatterns } from "./definitions.js";
+import { getDirectionVector, getOppositeDirection } from "./helper.js";
+
 //this class handles enemy spawning logic, this way we can decouple the enemypools from the spawn logic
 //we will simply define a method of spawning based on a class in the spawn manager.
 
@@ -12,63 +15,36 @@ export class SpawnManager extends Phaser.Plugins.ScenePlugin {
     create() {
         this.canvas = this.scene.game.canvas;
     }
-
-    //spawns a group of enemies on the edge of the screen with optional delay
-    //between each spawn.
-    //the outsideDistance is how far outside of the screen to spawn, there is no randomization for this yet
-    spawnOnEdgeOfScreen(enemies, delay = 0, delayVariance = 0, outsideDistance = 250) {
-        var accumulatedDelay = 0; //total accumulated delay for staggering enemy spawns based on random delay variance        
-        //console.log(`spawnOnEdgeOfScreen(${enemies.length},${delay},${delayVariance},${outsideDistance})`);
-        for (var i = 0; i < enemies.length; i++) {
-            var a = Math.random();
-            var x = this.scene.cameras.main.worldView.x; //where the enemy spawns
-            var y = this.scene.cameras.main.worldView.y; //default to top left corner of camera location
-            var w = this.canvas.width;
-            var h = this.canvas.height;
-
-            var text = '';
-            if (a >= 0 && a <= 0.25) {
-                //top border
-                x += Math.random() * w;
-                y -= outsideDistance;
-                //target bottom border
-                //tx += Math.random() * w;
-                //ty += h
-
-                text = 'top';
-            } else if (a > 0.25 && a < 0.5) {
-                //right border
-                x += w + outsideDistance;
-                y += Math.random() * h;
-                //target left border
-                //ty += Math.random() * h;
-                text = 'right';
-            } else if (a >= 0.5 && a <= 0.75) {
-                //bottom border
-                x += Math.random() * w;
-                y += h + outsideDistance;
-                //target top border
-                //tx += Math.random() * w;
-                text = 'bottom';
-            } else {
-                //left border
-                y += Math.random() * h;
-                x -= outsideDistance;
-                //target right border
-                //tx += w;
-                //ty += Math.random() * h;
-                text = 'left';
+    
+    //spawn a group of enemies in a line with a length a certain distance from the player
+    //the direction from the player will be determined by the enemy "direction" value 
+    //that should be in enemies[0].config.onReset.direction. If this value is not found
+    //default to the direction being down, so the enemies will spawn above the player
+    spawnInLine(enemies, distance, halfLength, delay, delayVariance) {
+        if (enemies.length > 0) {            
+            let x = enemies[0].scene.player.currentSprite.x;
+            let y = enemies[0].scene.player.currentSprite.y;
+            let dir = enemies[0].config.onReset.direction ?? Directions.DOWN;
+            let spawnDirection = getDirectionVector(getOppositeDirection(dir));
+            //create a horizontal line on the player and then center/rotate it based on spawn config
+            let spawnLine = new Phaser.Geom.Line(-halfLength, 0, halfLength, 0);
+            //scale the line dire
+            Phaser.Geom.Line.CenterOn(spawnLine, (spawnDirection.x * distance) + x, (spawnDirection.y * distance) + y);
+            switch (dir) {
+                case Directions.DOWN:
+                    break;
+                case Directions.UP:
+                    break;
+                case Directions.LEFT:
+                    Phaser.Geom.Line.Rotate(spawnLine, Math.PI/2);
+                    break;
+                case Directions.RIGHT:
+                    Phaser.Geom.Line.Rotate(spawnLine, Math.PI/2);
+                    break;
             }
 
-            //console.log(`<${x}, ${y}>, <${text}>`);
-
-            if (delay == 0) {
-                this._spawn(enemies[i], x, y);
-            } else {
-                var finalDelay = this.calculateFinalDelay(delay, delayVariance);
-                accumulatedDelay += finalDelay;
-                setTimeout(this._spawn, accumulatedDelay, enemies[i], x, y);
-            }
+            let spawnPoints = spawnLine.getPoints(enemies.length);
+            this._delayedSpawn(enemies, spawnPoints, delay, delayVariance);
         }
     }
 
@@ -97,11 +73,61 @@ export class SpawnManager extends Phaser.Plugins.ScenePlugin {
         }
     }
 
+    spawnAroundPlayer(enemies, radius, delay, delayVariance) {
+        if (enemies.length > 0) {
+            let x = enemies[0].scene.player.currentSprite.x;
+            let y = enemies[0].scene.player.currentSprite.y;
+            let spawnCircle = new Phaser.Geom.Circle(x, y, radius);
+            let spawnPoints = spawnCircle.getPoints(enemies.length);
+            this._delayedSpawn(enemies, spawnPoints, delay, delayVariance);
+        
+            console.log(spawnPoints);
+        }
+    }
+
+    /**
+     * Spawns a group of enemies in a bunch at a certain offset from the players current position
+     * 
+     * @method SpawnManager#spawnBunch
+     * 
+     * @param {number} enemies - The spawning enemies
+     * @param {object} offset - The offset from which to spawn the bunch, an object like {x: 0, y: 0}
+     * @param {number} delay - The delay between spawning each enemy
+     * @param {number} delayVariance - The random variance in the delay
+     */
+    spawnBunch(enemies, offset, delay, delayVariance) {
+        if (enemies.length > 0) {
+            let x = enemies[0].scene.player.currentSprite.x;
+            let y = enemies[0].scene.player.currentSprite.y;
+            let spawnSquare = new Phaser.Geom.Rectangle(x + offset.x, y + offset.y, 20, 20);
+            let spawnPoints = spawnSquare.getPoints(enemies.length);
+            this._delayedSpawn(enemies, spawnPoints, delay, delayVariance);        
+            console.log(spawnPoints);
+        }
+    }
+
+    _delayedSpawn(enemies, points, delay, delayVariance) {
+        let accumulatedDelay = 0;
+        for (var i = 0; i < points.length; i++) {            
+            if (delay == 0) {
+                this._spawn(enemies[i], points[i].x, points[i].y);
+            } else {
+                var finalDelay = this.calculateFinalDelay(delay, delayVariance);
+                accumulatedDelay += finalDelay;
+                setTimeout(function(enemy, x, y, spawnManager) {
+                    spawnManager._spawn(enemy, x, y);
+                    //enemy.target = circle;
+                }, accumulatedDelay, enemies[i], points[i].x, points[i].y, this);
+            }
+        }
+    }
+
     //spawn a single enemy at X, Y position, internal method
     //used as a timeout handler for delayed spawns
     _spawn(enemy, x, y) {
-        //console.log(`SPAWNING AT <${x}, ${y}>`);
+        //don't move this to the resetOnAlive function because we need to know x and y for the enableBody function and we shouldn't give that to the resetOnAlive function
         enemy.enableBody(true, x, y, true, true);
+        //console.log(`SPAWNING AT <${x}, ${y}>`);
         enemy.resetOnAlive();
     }
 
@@ -114,5 +140,45 @@ export class SpawnManager extends Phaser.Plugins.ScenePlugin {
     calculateFinalDelay(delay, delayVariance) {
         var scaledVariance = delayVariance + 1;
         return Math.floor((Math.random() * (scaledVariance*delay)-(delay/scaledVariance)) + (delay/scaledVariance));
+    }
+
+    //this function spawns enemies based on a preset SpawnPattern
+    spawnFromPreset(enemies, waveConfig) {
+        //look up nullish coaelescing operator
+        //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing
+        let delay = waveConfig.staggerDelay ?? 0; 
+        let variance = waveConfig.staggerVariance ?? 0;
+        let dist = waveConfig.radius ?? 400;
+        switch (waveConfig.shape) {
+            case SpawnPatterns.BOX: 
+                break;
+            case SpawnPatterns.CIRCLE: 
+                this.spawnAroundPlayer(enemies, dist, delay, variance);
+                break;
+            case SpawnPatterns.LINE: 
+                //spawn in a line
+                let lineLength = waveConfig.length ?? 100;
+                this.spawnInLine(enemies, dist, lineLength, delay, variance);
+                break;
+            case SpawnPatterns.BUNCHED:
+                //spawn in a small square, make sure they are set to collidewithself so they space themselves out automatically
+                //as we cannot do that here, also give them a stagger delay to make the physics calculations smoother
+                //use the startoffset value to determine where to spawn the bunch
+                var offset = waveConfig.startOffset ?? {x: 0, y: 200}
+                this.spawnBunch(enemies, offset, delay, variance);
+                break;
+            case SpawnPatterns.RANDOM:
+                //spawn a bunch with a random offset based on the radius value in the waveConfig
+                //step 1: build a circle around the player
+                //step 2: call getPoint(Math.random()) to get a random point on the circumference
+                //step 3: profit
+                let circle = new Phaser.Geom.Circle(0, 0, dist);
+                this.spawnBunch(enemies, circle.getPoint(Math.random()), delay, variance);
+                break;
+            case SpawnPatterns.TRIANGLE:
+                break;
+            case SpawnPatterns.CORNERS: 
+                break;
+        }
     }
 }
