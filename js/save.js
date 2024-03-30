@@ -1,3 +1,5 @@
+import { PlayerClasses } from "./definitions.js";
+
 //each scene can create it's own save manager
 export class SaveManager extends Phaser.Plugins.BasePlugin {
 
@@ -22,12 +24,11 @@ export class SaveManager extends Phaser.Plugins.BasePlugin {
             stardust: 0, //more valuable currency, used for persistent upgrades and class unlocks, and in game upgrades
             scrap: 0, //shit currency, used for in game upgrades
             isBossModeUnlocked: false, //self explanatory
+            class: PlayerClasses.SPACE_MARINE
         };
     }
 
-    start() {        
-        this.cachedSave = this.tryGetGameSave();
-        this.events.emit('cachedSaveChanged', this.cachedSave);
+    start() {
     }
 
     //will overwrite the old upgrades list with the new one
@@ -52,6 +53,7 @@ export class SaveManager extends Phaser.Plugins.BasePlugin {
 
     //tries to get a saved game, if none exists, returns false
     tryGetGameSave() {
+        this.parsedSave = null;
         this._parseSave();
 
         if (this.parsedSave) {
@@ -105,25 +107,23 @@ export class SaveManager extends Phaser.Plugins.BasePlugin {
         }
     }
 
-    // we save a list of persistent upgrades as a comma delimited list of strings
-    // this includes everything, since all persistent upgrades should have a unique key
-    getPersistentUpgrades() {
+    get persistentUpgrades() {
         if (this.cachedSave) return this.cachedSave.persistentUpgrades;
         else return false;
     }
-    
+
     //current level the player has reached
-    getCurrentLevel() {
+    get currentLevel() {
         if (this.cachedSave) return this.cachedSave.currentLevel;
         else return 1;
     }
 
-    getResentment() {
+    get resentment() {
         if (this.cachedSave) return this.cachedSave.resentment;
         else return 0;
     }
 
-    getPlayerLevel() {
+    get playerLevel() {
         if (this.cachedSave) return this.cachedSave.playerLevel;
         else return 1;
     }
@@ -145,13 +145,13 @@ export class SaveManager extends Phaser.Plugins.BasePlugin {
     }
 
     //stardust is the currency to buy persistent upgrades
-    getStardust() {
+    get stardust() {
         if (this.cachedSave) return this.cachedSave.stardust;
         else return 0;
     }
 
     //scrap is the currency to buy in game upgrades
-    getScrap() {
+    get scrap() {
         if (this.cachedSave) return this.cachedSave.scrap;
         else return 0;
     }
@@ -159,12 +159,12 @@ export class SaveManager extends Phaser.Plugins.BasePlugin {
     //game mode: 
     // 0 -> BOUNTY mode, normal mode
     // 1 -> BOSS mode, "easy" mode
-    getGameMode() {
+    get gameMode() {
         if (this.cachedSave) return this.cachedSave.gameMode;
     }
 
-    getGameModeText() {
-        let mode = this.getGameMode();
+    get gameModeText() {
+        let mode = this.gameMode;
         let text = "";
         switch(mode) {
             case 0:

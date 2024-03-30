@@ -1,0 +1,8 @@
+{
+    "classes": [
+        {
+            "key": "space-marine",
+            "starterSpells": ["gatling-beam", "space-sword"]
+        }
+    ]
+}

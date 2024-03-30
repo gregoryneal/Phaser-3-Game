@@ -24,3 +24,9 @@ export const Directions = Object.freeze({
     LEFT: 'left',
     RIGHT: 'right'
 });
+
+export const PlayerClasses = Object.freeze({
+    QUANTUM_MAGE: 'quantum-mage',
+    SPACE_MARINE: 'space-marine',
+    INTERSTELLAR_TRADER: 'interstellar-trader'
+});

@@ -197,9 +197,9 @@ export class MainMenu extends Phaser.Scene {
         this.questionCursor = 'url(images/interface/cursors/cursor-question-1.png), pointer';
 
         this.saveManager.clearGameSave();
-        this.createDefaultSaveFile();
+        //this.createDefaultSaveFile();
 
-        this.createTitle();
+        //this.createTitle();
 
         this.createSavedGameDataPanel(); //shows saved game data
         this.createMainMenu();
@@ -264,7 +264,14 @@ export class MainMenu extends Phaser.Scene {
     //  },
     //  order: [], //the order of the elements, will sort each element in the menu according to this list
     //}
-    //buttonN = { text: "", ptrUpHandler: function(...ptrUpArgs) *optional, style: {} *optional, ptrUpArgs: [], ptrOverHandler, ptrOverArgs: [], ptrOutHandler, ptrOutArgs: [], name: ""}
+    //buttonN = {   text: "", 
+    //              ptrUpHandler: function(...ptrUpArgs) *optional, 
+    //              style: {} *optional, 
+    //              ptrUpArgs: [], 
+    //              ptrOverHandler, ptrOverArgs: [], 
+    //              ptrOutHandler, ptrOutArgs: [],
+    //              name: ""
+    //           }
     createSelectorMenu(newMenuConfig) {
         //newMenu
         //newMenuSelector
@@ -400,18 +407,29 @@ export class MainMenu extends Phaser.Scene {
             }
         }
 
+        if (newMenuConfig.title) {
+            let x = newMenuConfig.title.xOffset ?? 0;
+            let y = newMenuConfig.title.yOffset ?? 0;
+            let title = this.add.text(x, y, newMenuConfig.title.text, newMenuConfig.title.style);
+            newMenu.container.add(title);
+            Phaser.Display.Bounds.CenterOn(title, x, y);
+        }
+
         if (newMenuConfig.header) {
+            var obj = {};
+
+
             //add a header object to newMenu
-            var ts = newMenuConfig.header.textStyle | this.menuButtonStyle;
-            var tooltip = this.add.text(0, 0, newMenuConfig.header.text, {color: 'white'});
+            var ts = newMenuConfig.header.textStyle ?? this.menuButtonStyle;
+            var tooltip = this.add.text(0, 0, newMenuConfig.header.text, ts);
             var b = this.add.nineslice(0, 0, newMenuConfig.header.background, 0, tooltip.width+100, 50, 17, 17, 17, 17);
             var d = this.add.image(0, 0, newMenuConfig.header.divider);
 
             Object.assign(newMenu, {
                 header: {
-                    background: b,
                     text: tooltip,
-                    divider: d,
+                    background: b,
+                    divider: d
                 }
             });
 
@@ -555,6 +573,12 @@ export class MainMenu extends Phaser.Scene {
     createMainMenu() {
         this.mainMenu = this.createSelectorMenu({
             selector: 'default',
+            title: {
+                        text: "The Guardians of Space", //text for the button
+                        style: this.titleStyle, //regular textstyle object from phaser, default to this.menuButtonStyle
+                        xOffset: 0, 
+                        yOffset: -300
+                    },
             buttons: [
                 {
                     text: "Play",
@@ -725,7 +749,7 @@ export class MainMenu extends Phaser.Scene {
 
         this.lvlSeperator = this.add.image(badgeX + badgeW + 50, 0, 'border-8');
 
-        this.gameModeText = this.add.text(0, 0, this.saveManager.getGameModeText());
+        this.gameModeText = this.add.text(0, 0, this.saveManager.gameModeText);
 
         this.lvlText = this.add.text(0, 0, `lvl: \t${save.currentLevel}`);
         this.resText = this.add.text(0, 0, `res: \t${save.resentment}`);
@@ -1406,15 +1430,15 @@ export class MainMenu extends Phaser.Scene {
         this.resumeGameMenu = this.add.rexContainerLite(this.center.x, this.center.y);
 
         let currencySizer = this.rexUI.add.sizer({y: -300, width: 500});
-        let stdstTxt = this.add.text(0, 0, `stardust: ${this.saveManager.getStardust()}`);
-        let scpTxt = this.add.text(0, 0, `scrap: ${this.saveManager.getScrap()}`);
+        let stdstTxt = this.add.text(0, 0, `stardust: ${this.saveManager.stardust}`);
+        let scpTxt = this.add.text(0, 0, `scrap: ${this.saveManager.scrap}`);
 
         //change values on screen when we change the values of the cached save
         this.saveManager.events.on('cachedSaveChanged', function(newSave) {
             console.log("NEW SAVE GAME");
 
-            this.stardust.setText(`stardust: ${this.scene.saveManager.getStardust()}`);            
-            this.scrap.setText(`scrap: ${this.scene.saveManager.getScrap()}`);
+            this.stardust.setText(`stardust: ${this.scene.saveManager.stardust}`);            
+            this.scrap.setText(`scrap: ${this.scene.saveManager.scrap}`);
 
             /*this.scene.persistentUpgradePanel.removeAll(true);
             this.scene.persistentUpgradePanel.setPanel(this.scene.createPersistentUpgradeButtonList())
@@ -1656,7 +1680,7 @@ export class MainMenu extends Phaser.Scene {
         let h3 = 25; //heigth of icons sizer
         let padding = 5;
 
-        let numUnlockedLevels = this.saveManager.getCurrentLevel();
+        let numUnlockedLevels = this.saveManager.currentLevel;
         //console.log(unlockList);
         let buttons = [];
         for (var i = 0; i < this.levelManager.levels.length; i++) {
