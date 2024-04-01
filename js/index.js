@@ -19,6 +19,10 @@ $(window).on('load', function (event) {
     const config = {
         type: Phaser.AUTO,
         parent: 'game-wrapper',
+        scale: {
+            mode: Phaser.Scale.FIT,
+            autoCenter: Phaser.Scale.CENTER_BOTH,
+        },
         //width: screenDim[0],
         //height: screenDim[1],
         scene: [

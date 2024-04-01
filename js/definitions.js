@@ -30,3 +30,8 @@ export const PlayerClasses = Object.freeze({
     SPACE_MARINE: 'space-marine',
     INTERSTELLAR_TRADER: 'interstellar-trader'
 });
+
+export const GameModes = Object.freeze({
+    BOUNTY: 'Bounty',
+    HORDE: 'Horde'
+});

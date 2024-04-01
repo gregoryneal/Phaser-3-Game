@@ -501,4 +501,9 @@ skew to change the 'thickness' of the glitch.*/
   align-items: center;
 }
 
+canvas {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 /* end game canvas styling */

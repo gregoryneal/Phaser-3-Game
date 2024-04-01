@@ -1,5 +1,6 @@
 import { UIManager } from "./ui.js";
 import { getPositionRelativeToViewportPercent, abbreviateNumber, millisToMinutesAndSeconds } from "./helper.js";
+import { GameModes } from "./definitions.js";
 
 export class PreloadScene extends Phaser.Scene {
     constructor() {
@@ -56,6 +57,7 @@ export class PreloadScene extends Phaser.Scene {
         this.load.image('button-2', 'images/interface/button-2.png');    
         this.load.image('button-1', 'images/interface/button-1.png');    
         this.load.image('selector-4', 'images/interface/selector-4.png');
+        this.load.image('arrow-left', 'images/interface/arrow-left.png');
         this.load.image('border-bottom-1', 'images/interface/border-bottom-1.png');
         this.load.image('border-6', 'images/interface/border-6.png');
         this.load.image('border-8', 'images/interface/border-8.png');
@@ -175,6 +177,7 @@ export class MainMenu extends Phaser.Scene {
         let b = {x: 0, y: 0, width: 300, height: 600};
         this.cameras.main.setBounds(b.x, b.y, b.width, b.height, false);
         this.center = this.cameras.main.midPoint;
+        //this.add.ellipse(this.center.x, this.center.y, 20, 20, 0xffffff);
 
         //camera bounds setup
         //menu selector
@@ -196,14 +199,15 @@ export class MainMenu extends Phaser.Scene {
         this.dragCursor = 'url(images/interface/cursors/cursor-direction-25.png), pointer';
         this.questionCursor = 'url(images/interface/cursors/cursor-question-1.png), pointer';
 
-        this.saveManager.clearGameSave();
-        //this.createDefaultSaveFile();
+        this.saveManager.clearGameSaves();
+        this.createDefaultSaveFile();
 
         //this.createTitle();
 
         this.createSavedGameDataPanel(); //shows saved game data
         this.createMainMenu();
         this.createPlayButtonMenu();
+        this.createLoadGameMenu();
         this.createNewGameMenu();
         this.createSettingsMenu();
         this.createCharacterUpgradeMenu();
@@ -211,6 +215,9 @@ export class MainMenu extends Phaser.Scene {
         this.createResumeGameMenu();
 
         this.showMainMenu();
+
+        //create a border around the screen
+
 
         //when we begin a transition away from the main menu this is called
         this.events.on('transitionout', function(sys, data) {}, this);
@@ -223,13 +230,13 @@ export class MainMenu extends Phaser.Scene {
 
     //default save file if none is found in localstorage
     createDefaultSaveFile() {
-        let fakeSave = this.saveManager.emptySave;
+        let fakeSave = this.saveManager.getFirstEmptySave();
         //fakeSave.persistentUpgrades = ['hp-2', 'hps-2'];
         //fakeSave.playerLevel = 932;
         fakeSave.stardust = 149;
         fakeSave.scrap = 34732;
 
-        this.saveManager.createNewSave(fakeSave);
+        this.saveManager._pushSave();
     }
 
     createTitle() {
@@ -496,6 +503,10 @@ export class MainMenu extends Phaser.Scene {
         this.showMenu(this.classUpgradeMenuBts);
     }
 
+    showLoadMenu() {
+        this.showMenu(this.loadMenu);
+    }
+
     showResumeGameMenu(){
         this.showMenu([this.resumeGameMenu, this.resumeGameSelectorMenu]);
     }
@@ -507,9 +518,118 @@ export class MainMenu extends Phaser.Scene {
 
         for (var i = 0; i < this.allMenuSelectors.length; i++) {
             this.allMenuSelectors[i].setVisible(false);
+        }        
+    }
+
+    createSaveButton(save) {
+        let btn = this.rexUI.add.label({
+            background: this.add.rectangle(0, 0, 10, 10, 0xffffff, 1),
+            icon: this.add.rectangle(0, 0, 10, 10, this.color_dark, 0),
+            text: this.add.text(0, 0, save.key),
+        }).layout();
+
+        return btn;
+    }
+
+    //create a grid sizer with all the save game buttons in them
+    //when the player clicks a button it will load the save
+    createSaveGameButtonList() {
+        //now loop through each save and create a new row
+        //for it in the grid sizer
+        let saves = this.saveManager.getAllSaves();
+        let buttons = [];
+        for (let i = 0; i < saves.length; i++) {
+            buttons.push([this.createSaveButton(saves[i])]);
         }
 
+        let saveButtons = this.rexUI.add.gridButtons({
+            space: {
+                row: 4,
+                top: 10,
+                bottom: 10,
+                left: 10,
+                right: 10
+            },
+            expand: true,
+            click: {
+                mode: 'pointerup',
+                clickInterval: 1000
+            },
+            type: 'checkboxes',
+            setValueCallback: function (button, value) {
+                button.getElement('icon').setFillStyle((value) ? 0xffffff : undefined);
+            },
+            buttons: buttons,
+        }).layout();
+
+        let p = this.rexUI.add.sizer({
+            space: {
+                row: 4,
+                top: 10,
+                bottom: 10,
+                left: 10,
+                right: 10
+            },
+            expand: true
+        ,});
+
+        p.add(this.add.text(0, 0, "But I must explain to you how all this mistaken idea of denouncing pleasure and praising pain was born and I will give you a complete account of the system, and expound the actual teachings of the great explorer of the truth, the master-builder of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it is pleasure, but because those who do not know how to pursue pleasure rationally encounter consequences that are extremely painful. Nor again is there anyone who loves or pursues or desires to obtain pain of itself, because it is pain, but because occasionally circumstances occur in which toil and pain can procure him some great pleasure. To take a trivial example, which of us ever undertakes laborious physical exercise, except to obtain some advantage from it? But who has any right to find fault with a man who chooses to enjoy a pleasure that has no annoying consequences, or one who avoids a pain that produces no resultant pleasure?"))
+        .layout();
+
+        return p;
+    }
+
+    createSaveGameScrollPanel() {
+        let panel = this.rexUI.add.scrollablePanel({
+            //background: this.add.nineslice(0, 0, 'button-2', 0, 10, 10, 18, 18, 16, 16),
+            panel: {
+                child: this.createSaveGameButtonList()
+            },
+            slider: {
+                track: this.add.rectangle(0, 0, 2, 10, 0xffffff),
+                thumb: this.add.circle(0, 0, 4, 0xcccccc)
+            },
+            expand: {
+                panel: true
+            }
+        }).layout();
+
+        return panel;
+    }
+
+    createLoadGameMenu() {
         
+        let loadTitle = this.add.text(0, -200, "Load Game", this.titleStyle);
+        let savePanel = this.createSaveGameScrollPanel();
+        /*this.loadMenu = this.rexUI.add.sizer({
+            x: this.center.x,
+            y: this.center.y,
+            orientation: "y",
+            /*anchor: {
+                'centerX': 'center',
+                'centerY': 'center',
+                width: '100%',
+                height: '100%'
+            }*//*
+            expand: true
+        });*/
+
+        this.loadMenu = this.createSelectorMenu({
+            selector: 'default',
+            buttons: [
+                {
+                    text: "Back",
+                    ptrUpHandler: function() {
+                        this.showMainMenu();
+                    }
+                }
+            ]
+        });
+
+        this.loadMenu.add(loadTitle);
+        this.loadMenu.add(savePanel);
+
+        //this.allMenus.push(this.loadMenu);
     }
 
     //create the menu that opens after the player selects PLAY on the main menu
@@ -524,6 +644,7 @@ export class MainMenu extends Phaser.Scene {
     //if load save -> load the saved game, we must detect a saved game and gray this button out if there is no saved game to load
     //             -> once the save is loaded, open the game menu which shows NEXT LEVEL, LEVELS, or QUIT buttons
     createPlayButtonMenu() {
+        /*
         this.playButtonMenu = this.createSelectorMenu({
             selector: 'default',
             buttons: [
@@ -542,18 +663,18 @@ export class MainMenu extends Phaser.Scene {
                     text: "Resume",
                     ptrUpHandler: function() {
                         //resume game
-                        if (this.saveManager.tryGetGameSave()) {
+                        if (this.saveManager.getCurrentSave()) {
                             this.showResumeGameMenu();
                         }
                     },
                     ptrOverHandler: function(headerMenu, headerMenuBG) {
-                        headerMenu.setVisible(true);
+                        //headerMenu.setVisible(true);
                     },
-                    ptrOverArgs: [this.headerMenu, this.headerMenuBG],
+                    //ptrOverArgs: [this.headerMenu, this.headerMenuBG],
                     ptrOutHandler: function(headerMenu) {
-                        headerMenu.setVisible(false);
+                        //headerMenu.setVisible(false);
                     },
-                    ptrOutArgs: [this.headerMenu],
+                    //ptrOutArgs: [this.headerMenu],
                     tooltip: {
                         text: "Start ",
                         x: this.center.x/2,
@@ -567,7 +688,7 @@ export class MainMenu extends Phaser.Scene {
                     },
                 },
             ],
-        });
+        });*/
     }
 
     createMainMenu() {
@@ -577,13 +698,13 @@ export class MainMenu extends Phaser.Scene {
                         text: "The Guardians of Space", //text for the button
                         style: this.titleStyle, //regular textstyle object from phaser, default to this.menuButtonStyle
                         xOffset: 0, 
-                        yOffset: -300
+                        yOffset: -240
                     },
             buttons: [
                 {
                     text: "Play",
                     ptrUpHandler: function() {
-                        this.showPlayButtonMenu();
+                        this.showLoadMenu();
                     },
                     tooltip: {
                         text: "Play game",
@@ -636,21 +757,50 @@ export class MainMenu extends Phaser.Scene {
     createNewGameMenu() {
         this.newGameMenu = this.createSelectorMenu({
             selector: 'default',
+            title: {
+                text: "New Game",
+                style: this.titleStyle,
+                yOffset: -240
+            },
             buttons: [
                 {
-                    text: "Bounty mode",
+                    text: `${GameModes.BOUNTY} mode`,
                     tooltip: {
-                        text: "Classic mode, with resentment",
+                        text: "The default game mode, fight through the hordes as well as your own mental fortitude.",
                         x: this.center.x/2,
                         y: 300,
+                    },
+                    ptrUpHandler: function() {
+                        //create a new save game if one doesn't exist, and
+                        //set the game mode to bounty, then load the resume game menu
+                        let s = this.saveManager.getFirstEmptySave();
+                        if (s) {
+                            s.gameMode = GameModes.BOUNTY;
+                        } else {
+                            //all the save slots are filled, show an error or something
+                        }
+
+                        this.showResumeGameMenu();
                     }
                 },
                 {
-                    text: "Boss mode",
+                    text: `${GameModes.HORDE} mode`,
                     tooltip: {
-                        text: "Same as homebound without resentment",
+                        text: "The easy game mode, you only have to fight the hordes in this one.",
                         x: this.center.x/2,
                         y: 300,
+                    },
+                    ptrUpHandler: function() {
+                        //create a new save game if one doesn't exist, and
+                        //set the game mode to horde mode, then load the resume game menu
+                        let s = this.saveManager.getFirstEmptySave();
+                        if (s) {
+                            s.gameMode = GameModes.HORDE;
+                        } else {
+                            //all the save slots are filled, show an error or something
+                        }
+
+                        this.showResumeGameMenu();
                     }
                 },
                 {
@@ -669,7 +819,7 @@ export class MainMenu extends Phaser.Scene {
                 position: Phaser.Display.Align.CENTER
             }
         });
-        Phaser.Actions.GridAlign(this.newGameMenu.buttons, this.mainMenu.gridAlign);
+        Phaser.Actions.GridAlign(this.newGameMenu.buttons, this.newGameMenu.gridAlign);
     }
 
     createSettingsMenu() {
@@ -726,6 +876,8 @@ export class MainMenu extends Phaser.Scene {
 
         this.allMenus.push(this.headerMenu);
 
+        //if there is a save game we will use it to create the display panel
+        //if there is not a save game we will add a listener to
         if (this.saveManager.cachedSave) {
             this.savedGameDataPanel = this.createSavedGameDataInnerPanel(this.saveManager.cachedSave, 0, yMax, this.saveGamePanelWidth, this.saveGamePanelHeight);
             this.headerMenu.add(this.savedGameDataPanel);
@@ -790,15 +942,6 @@ export class MainMenu extends Phaser.Scene {
         this.characterUpgradeMenuBG = this.add.nineslice(0, 0, 'button-2', 0, this.characterUpgradeMenuWidth, this.characterUpgradeMenuHeight, 18, 18, 16, 16);
         //this.characterUpgradeMenuBG = this.add.image(0, 0, 'button-2');
 
-        //this is an array of upgrade keys, we need to load this from localstorage first
-        //then when the player gets an upgrade, we save that to local storage, and replace
-        //current upgrade key with the next one ,we can use upgradesManager.nextUpgrades or whatever.
-        //even though nextUpgrades is a list we can just assume it's the next one, or if there are more than one
-        //next upgrade we can add buttons to allow the player to get that upgrade
-        //
-        let currentUpgrades = [];
-        let allUpgrades = this.upgradeManager;
-
         this.characterUpgradeMenuBts = this.createSelectorMenu({
             selector: 'default',
             buttons: [
@@ -810,8 +953,6 @@ export class MainMenu extends Phaser.Scene {
                 }
             ]
         });
-
-
 
         this.characterUpgradeMenu.add(this.characterUpgradeMenuBG);
         this.characterUpgradeMenuBts.add(this.characterUpgradeMenu);
