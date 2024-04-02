@@ -562,6 +562,9 @@ export class MainMenu extends Phaser.Scene {
             buttons: buttons,
         }).layout();
 
+        return saveButtons;
+
+        /*
         let p = this.rexUI.add.sizer({
             space: {
                 row: 4,
@@ -576,7 +579,7 @@ export class MainMenu extends Phaser.Scene {
         p.add(this.add.text(0, 0, "But I must explain to you how all this mistaken idea of denouncing pleasure and praising pain was born and I will give you a complete account of the system, and expound the actual teachings of the great explorer of the truth, the master-builder of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it is pleasure, but because those who do not know how to pursue pleasure rationally encounter consequences that are extremely painful. Nor again is there anyone who loves or pursues or desires to obtain pain of itself, because it is pain, but because occasionally circumstances occur in which toil and pain can procure him some great pleasure. To take a trivial example, which of us ever undertakes laborious physical exercise, except to obtain some advantage from it? But who has any right to find fault with a man who chooses to enjoy a pleasure that has no annoying consequences, or one who avoids a pain that produces no resultant pleasure?"))
         .layout();
 
-        return p;
+        return p;*/
     }
 
     createSaveGameScrollPanel() {
@@ -591,6 +594,12 @@ export class MainMenu extends Phaser.Scene {
             },
             expand: {
                 panel: true
+            },
+            anchor: {
+                'centerX': 'center',
+                'centerY': 'center',
+                width: '100%',
+                height: '100%'
             }
         }).layout();
 
@@ -600,6 +609,7 @@ export class MainMenu extends Phaser.Scene {
     createLoadGameMenu() {
         
         let loadTitle = this.add.text(0, -200, "Load Game", this.titleStyle);
+        let savePanelOuter = this.add.container(0, 0);
         let savePanel = this.createSaveGameScrollPanel();
         /*this.loadMenu = this.rexUI.add.sizer({
             x: this.center.x,
@@ -626,8 +636,10 @@ export class MainMenu extends Phaser.Scene {
             ]
         });
 
+        savePanelOuter.add(savePanel);
         this.loadMenu.add(loadTitle);
-        this.loadMenu.add(savePanel);
+        this.loadMenu.add(savePanelOuter);
+        Phaser.Display.Bounds.CenterOn(loadTitle, 0, -200);
 
         //this.allMenus.push(this.loadMenu);
     }
@@ -751,7 +763,7 @@ export class MainMenu extends Phaser.Scene {
             },
         });
 
-        Phaser.Actions.GridAlign(this.mainMenu.buttons, this.mainMenu.gridAlign);
+        //Phaser.Actions.GridAlign(this.mainMenu.buttons, this.mainMenu.gridAlign);
     }
 
     createNewGameMenu() {
